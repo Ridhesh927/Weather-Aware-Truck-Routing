@@ -164,7 +164,21 @@ $$\text{Sort Priority} = \Big(\text{Severe Miles}, \ \text{High Miles}, \ \text{
 
 ---
 
-## 5. Hand-Computed Proof & Verification
+## 5. India & South Asia Regional Freight Corridors
+
+The system is configured with pre-calibrated major commercial corridors across India and South Asia, covering varied meteorological and geographical terrains:
+
+| Corridor Name | Route Highway | Distance | Primary Weather Hazard Profile |
+|---|---|---|---|
+| **Mumbai ➔ Delhi** | Western Corridor (NH48) | $1,420\text{ km}$ ($882\text{ mi}$) | Monsoon downpours, coastal crosswinds, and semi-arid dust shears |
+| **Delhi ➔ Kolkata** | Grand Trunk Road (NH19) | $1,510\text{ km}$ ($938\text{ mi}$) | Heavy Gangetic basin rain, riverine flood zones, dense winter fog |
+| **Bengaluru ➔ Chennai** | Industrial Belt (NH48) | $345\text{ km}$ ($214\text{ mi}$) | Bay of Bengal tropical depression squalls & high-speed wind shears |
+| **Delhi ➔ Srinagar** | Himalayan Mountain Pass (NH44) | $810\text{ km}$ ($503\text{ mi}$) | Severe mountain snowfall ($> 2\text{ in/hr}$), sub-zero freezing precipitation |
+| **Pune ➔ Hyderabad** | Deccan Plateau (NH65) | $560\text{ km}$ ($348\text{ mi}$) | High thermal gusts and sudden plateau thunderstorm deluges |
+
+---
+
+## 6. Hand-Computed Proof & Verification
 
 Consider three candidate routes between Chicago, IL and Pittsburgh, PA ($400\text{ miles}$, $16\text{ checkpoints}$ at $25\text{ mile}$ intervals):
 
@@ -239,3 +253,4 @@ npm run build
 
 > [!TIP]
 > **Zero-Friction Dev Proxy**: The Vite server automatically proxies all `/api/*` network requests to `http://127.0.0.1:8000`, so no manual CORS proxy configuration is required during local development.
+

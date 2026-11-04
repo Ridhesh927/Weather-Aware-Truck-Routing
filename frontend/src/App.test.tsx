@@ -21,7 +21,7 @@ describe('App Component', () => {
     render(<App />)
     expect(screen.getByText('Weather-Aware Truck Routing')).toBeInTheDocument()
     expect(
-      screen.getByText('Safest route first, fastest route second')
+      screen.getByText(/High-Visibility Logistics Risk Management/)
     ).toBeInTheDocument()
 
     await waitFor(() => {
@@ -29,15 +29,16 @@ describe('App Component', () => {
     })
   })
 
-  it('renders core risk rules cards', async () => {
+  it('renders core risk rules cards and India regional corridor banner', async () => {
     render(<App />)
+    expect(screen.getByText(/India & South Asia Freight Corridors/)).toBeInTheDocument()
     expect(screen.getByText('Wind Hazard Thresholds')).toBeInTheDocument()
     expect(screen.getByText('Precipitation Thresholds')).toBeInTheDocument()
     expect(screen.getByText('Load Escalation Rules')).toBeInTheDocument()
     expect(screen.getByText('Route Priority Order')).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByText(/Backend Service:/)).toBeInTheDocument()
+      expect(screen.getByText(/Verified Backend Service:/)).toBeInTheDocument()
     })
   })
 })
