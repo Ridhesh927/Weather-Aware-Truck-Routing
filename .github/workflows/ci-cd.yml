@@ -81,5 +81,10 @@ jobs:
       - name: Trigger Render deploy hook
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK secret is not configured in GitHub repository yet."
+            echo "Skipping deployment step until Render service is provisioned (Day 4)."
+            exit 0
+          fi
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
