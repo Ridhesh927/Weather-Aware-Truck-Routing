@@ -17,6 +17,8 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
 allowed_hosts_str = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver")
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_str.split(",") if h.strip()]
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 # OpenRouteService API Key
 ORS_API_KEY = os.getenv("ORS_API_KEY", "")
