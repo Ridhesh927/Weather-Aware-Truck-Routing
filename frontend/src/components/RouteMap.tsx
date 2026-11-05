@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import {
   MapContainer,
@@ -128,6 +128,19 @@ function HeatmapOverlay({
 }) {
   const map = useMap()
   const heatLayerRef = useRef<L.HeatLayer | null>(null)
+  const [heatReady, setHeatReady] = useState(
+    typeof (L as unknown as { heatLayer?: unknown }).heatLayer === 'function'
+  )
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !(L as unknown as { heatLayer?: unknown }).heatLayer) {
+      import('leaflet.heat')
+        .then(() => {
+          setHeatReady(true)
+        })
+        .catch(() => {})
+    }
+  }, [])
 
   // Compute [lat, lon, intensity] array for the selected hour
   const heatPoints = useMemo<[number, number, number][]>(() => {
@@ -141,7 +154,7 @@ function HeatmapOverlay({
 
   useEffect(() => {
     // Only attach if heatLayer plugin is available on L
-    if (typeof (L as unknown as { heatLayer?: unknown }).heatLayer !== 'function') {
+    if (!heatReady && typeof (L as unknown as { heatLayer?: unknown }).heatLayer !== 'function') {
       return
     }
 
@@ -180,7 +193,7 @@ function HeatmapOverlay({
         heatLayerRef.current = null
       }
     }
-  }, [map, heatPoints, showHeatmap])
+  }, [map, heatPoints, showHeatmap, heatReady])
 
   return null
 }

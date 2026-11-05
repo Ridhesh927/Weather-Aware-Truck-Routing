@@ -15,7 +15,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #090d16;
+  background-color: #f8fafc;
   color: #0f172a;
 }
 
@@ -23,5 +23,4 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  position: relative;
 }

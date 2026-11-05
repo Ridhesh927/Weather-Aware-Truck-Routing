@@ -112,6 +112,7 @@ describe('App Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('API Connected')).toBeInTheDocument()
+      expect(screen.getByText(/Route Risk Comparison/)).toBeInTheDocument()
     })
   })
 
@@ -119,18 +120,25 @@ describe('App Component', () => {
     render(<App />)
     await waitFor(() => {
       expect(screen.getByText('API Connected')).toBeInTheDocument()
+      expect(screen.getByText(/Route Risk Comparison/)).toBeInTheDocument()
     })
 
     const bengaluruPreset = screen.getByRole('button', { name: /Bengaluru ➔ Chennai/ })
     expect(bengaluruPreset).toBeInTheDocument()
 
     fireEvent.click(bengaluruPreset)
-    const originInput = screen.getByLabelText(/Origin Location/i) as HTMLInputElement
-    expect(originInput.value).toBe('Bengaluru, Karnataka, India')
+    await waitFor(() => {
+      const originInput = screen.getByLabelText(/Origin Location/i) as HTMLInputElement
+      expect(originInput.value).toBe('Bengaluru, Karnataka, India')
+    })
   })
 
   it('submits trip planning form and displays route comparison cards', async () => {
     render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('API Connected')).toBeInTheDocument()
+    })
+
     const calculateButton = screen.getByRole('button', { name: /Calculate Safest Route/i })
     fireEvent.click(calculateButton)
 
@@ -145,14 +153,21 @@ describe('App Component', () => {
 
   it('updates selected corridor when preset is clicked', async () => {
     render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('API Connected')).toBeInTheDocument()
+      expect(screen.getByText(/Route Risk Comparison/)).toBeInTheDocument()
+    })
+
     expect(screen.getByText('India & South Asia Freight Corridors')).toBeInTheDocument()
 
     const srinagarPreset = screen.getByRole('button', { name: /Delhi ➔ Srinagar/i })
     fireEvent.click(srinagarPreset)
 
-    const originInput = screen.getByLabelText(/Origin Location/i) as HTMLInputElement
-    expect(originInput.value).toBe('New Delhi, Delhi, India')
-    const destInput = screen.getByLabelText(/Destination Location/i) as HTMLInputElement
-    expect(destInput.value).toBe('Srinagar, Jammu & Kashmir, India')
+    await waitFor(() => {
+      const originInput = screen.getByLabelText(/Origin Location/i) as HTMLInputElement
+      expect(originInput.value).toBe('New Delhi, Delhi, India')
+      const destInput = screen.getByLabelText(/Destination Location/i) as HTMLInputElement
+      expect(destInput.value).toBe('Srinagar, Jammu & Kashmir, India')
+    })
   })
 })
