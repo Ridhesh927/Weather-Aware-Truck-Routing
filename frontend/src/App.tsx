@@ -13,8 +13,13 @@ import {
   Navigation,
   Loader2,
   XCircle,
+  Sparkles,
 } from 'lucide-react'
 import './App.css'
+import { RouteMap } from './components/RouteMap'
+import { TimelineSlider } from './components/TimelineSlider'
+import { CheckpointTable } from './components/CheckpointTable'
+import HoloCard from './components/HoloCard'
 
 interface HealthResponse {
   status: string
@@ -139,6 +144,32 @@ function App() {
   const [planResult, setPlanResult] = useState<PlanResponse | null>(null)
   const [selectedRouteId, setSelectedRouteId] = useState<number>(0)
 
+  // Heatmap & Timeline playback states
+  const [currentHour, setCurrentHour] = useState<number>(0)
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(true)
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
+  const [selectedCheckpointId, setSelectedCheckpointId] = useState<number | null>(null)
+  const [showHoloCard, setShowHoloCard] = useState<boolean>(false)
+
+  // Auto-advance timeline animation effect
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentHour((prev) => {
+          if (prev >= 48) {
+            setIsPlaying(false)
+            return 48
+          }
+          return prev + 1
+        })
+      }, 600)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isPlaying])
+
   useEffect(() => {
     fetch('/api/health/')
       .then((res) => {
@@ -185,6 +216,9 @@ function App() {
       }
 
       setPlanResult(data)
+      setCurrentHour(0)
+      setIsPlaying(false)
+      setSelectedCheckpointId(null)
       if (data.recommended_index !== null && data.recommended_index !== undefined) {
         setSelectedRouteId(data.recommended_index)
       } else {
@@ -211,15 +245,79 @@ function App() {
             <p className="subtitle">High-Visibility Logistics Risk Management • South Asia &amp; India Network</p>
           </div>
         </div>
-        <div className={`status-badge status-${backendStatus}`}>
-          <span className="status-dot"></span>
-          <span>
-            {backendStatus === 'connected' && 'API Connected'}
-            {backendStatus === 'checking' && 'Connecting to API...'}
-            {backendStatus === 'disconnected' && 'API Offline'}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="preset-btn"
+            onClick={() => setShowHoloCard((prev) => !prev)}
+            style={{
+              background: showHoloCard ? 'var(--yellow-400)' : '#f1f5f9',
+              color: showHoloCard ? '#000' : 'var(--text-secondary)',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.4rem 0.85rem',
+            }}
+          >
+            <Sparkles size={15} />
+            <span>{showHoloCard ? 'Hide Holo Card' : 'Holo Card Badge'}</span>
+          </button>
+          <div className={`status-badge status-${backendStatus}`}>
+            <span className="status-dot"></span>
+            <span>
+              {backendStatus === 'connected' && 'API Connected'}
+              {backendStatus === 'checking' && 'Connecting to API...'}
+              {backendStatus === 'disconnected' && 'API Offline'}
+            </span>
+          </div>
         </div>
       </header>
+
+      {/* HoloCard Showcase Section */}
+      {showHoloCard && (
+        <section className="card" style={{ marginBottom: '2rem', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Sparkles size={20} style={{ color: 'var(--yellow-600)' }} />
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                Holographic Foil Card Component (WebGL2)
+              </h3>
+            </div>
+            <button
+              type="button"
+              className="preset-btn"
+              onClick={() => setShowHoloCard(false)}
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+            >
+              ✕ Close
+            </button>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+            Move mouse or touch to tilt and experience real-time holographic rainbow diffraction, foil bursts, and edge glitter physics.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+            <HoloCard
+              alt="Pikachu"
+              preset="bursts"
+              card="pikachu"
+              foilColor="#e2e6ec"
+              intensity={0.85}
+              scale={1}
+              edgeSparkle={0.8}
+              frame={4}
+              glare={0.5}
+              tiltMax={14}
+              hoverScale={1.04}
+              radius={14}
+              width={320}
+              idle
+              shadow
+            />
+          </div>
+        </section>
+      )}
 
       {/* Regional Freight Corridors Quick Select */}
       <section className="region-banner">
@@ -455,6 +553,44 @@ function App() {
               )
             })}
           </div>
+
+          {/* Interactive Route Map & Visualizer */}
+          <RouteMap
+            origin={planResult.origin}
+            destination={planResult.destination}
+            routes={planResult.routes}
+            recommendedIndex={planResult.recommended_index}
+            selectedRouteIndex={selectedRouteId}
+            onSelectRoute={(idx) => {
+              setSelectedRouteId(idx)
+              setSelectedCheckpointId(null)
+            }}
+            heatmap={planResult.heatmap}
+            currentHour={currentHour}
+            showHeatmap={showHeatmap}
+            selectedCheckpointId={selectedCheckpointId}
+            onSelectCheckpoint={(id) => setSelectedCheckpointId(id)}
+          />
+
+          {/* 0–48 Hour Corridor Weather Heatmap Scrubber */}
+          <TimelineSlider
+            currentHour={currentHour}
+            onChangeHour={(h) => setCurrentHour(h)}
+            departureTime={planResult.departure_at}
+            heatmap={planResult.heatmap}
+            showHeatmap={showHeatmap}
+            onToggleHeatmap={() => setShowHeatmap((prev) => !prev)}
+            isPlaying={isPlaying}
+            onTogglePlay={() => setIsPlaying((prev) => !prev)}
+          />
+
+          {/* Detailed Checkpoint Corridor Log */}
+          <CheckpointTable
+            checkpoints={planResult.routes[selectedRouteId]?.checkpoints || []}
+            selectedCheckpointId={selectedCheckpointId}
+            onSelectCheckpoint={(id) => setSelectedCheckpointId(id)}
+            routeName={planResult.routes[selectedRouteId]?.name || 'Selected Route'}
+          />
         </section>
       )}
 

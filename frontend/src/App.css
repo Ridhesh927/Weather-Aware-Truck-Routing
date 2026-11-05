@@ -451,3 +451,603 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* ==========================================================================
+   DAY 3: Interactive Route Map, Pins, Popups, and Controls
+   ========================================================================== */
+
+.map-wrapper {
+  margin-bottom: 2rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.route-count-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--yellow-100);
+  color: var(--yellow-700);
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--yellow-300);
+}
+
+.route-select-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.route-tab-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.route-tab-btn:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.route-tab-btn.active-tab {
+  background: var(--text-primary);
+  color: #fff;
+  border-color: var(--text-primary);
+}
+
+.route-tab-btn.recommended-tab.active-tab {
+  background: var(--yellow-400);
+  color: #000;
+  border-color: var(--yellow-500);
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3);
+}
+
+.leaflet-container-box {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom Marker Pins */
+.custom-endpoint-icon,
+.custom-cp-icon {
+  background: transparent;
+  border: none;
+}
+
+.endpoint-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.85rem;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.cp-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.cp-pin:hover,
+.cp-pin.cp-selected {
+  transform: scale(1.3);
+  z-index: 1000 !important;
+  box-shadow: 0 0 0 3px #0f172a, 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.cp-pin-low {
+  background: #16a34a;
+  color: #fff;
+}
+
+.cp-pin-moderate {
+  background: #facc15;
+  color: #000;
+}
+
+.cp-pin-high {
+  background: #f97316;
+  color: #fff;
+}
+
+.cp-pin-severe {
+  background: #ef4444;
+  color: #fff;
+}
+
+.cp-pin-no_travel {
+  background: #0f172a;
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* Checkpoint Popup */
+.checkpoint-popup-content {
+  min-width: 210px;
+  font-family: inherit;
+  color: #0f172a;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.popup-tier-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.tier-low { background: #dcfce7; color: #15803d; }
+.tier-moderate { background: #fef9c3; color: #a16207; }
+.tier-high { background: #ffedd5; color: #c2410c; }
+.tier-severe { background: #fee2e2; color: #b91c1c; }
+.tier-no_travel { background: #450a0a; color: #fecaca; }
+
+.popup-meta {
+  font-size: 0.8rem;
+  color: #475569;
+  margin-bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popup-weather-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  background: #f8fafc;
+  padding: 0.4rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.popup-weather-item .w-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.popup-weather-item .w-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.popup-alert-blocked {
+  margin-top: 0.5rem;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.popup-safe-notice {
+  margin-top: 0.5rem;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Map Floating Legend */
+.map-floating-legend {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.legend-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.legend-items {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-low { background: #16a34a; }
+.dot-moderate { background: #facc15; }
+.dot-high { background: #f97316; }
+.dot-severe { background: #ef4444; }
+.dot-blocked { background: #7f1d1d; }
+
+/* ==========================================================================
+   Timeline Scrubber & Corridor Heatmap Controls
+   ========================================================================== */
+
+.timeline-card {
+  border: 1px solid var(--border);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timeline-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.timeline-slider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.timeline-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ctrl-btn {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.current-hour-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hour-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #0f172a;
+  color: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.forecast-time-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--yellow-700);
+}
+
+.slider-container {
+  width: 100%;
+}
+
+.timeline-range {
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+  background: #e2e8f0;
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--yellow-500);
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+
+.tick-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.tick-btn:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.tick-btn.active-tick {
+  background: var(--yellow-400);
+  color: #000;
+  font-weight: 800;
+}
+
+.corridor-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.summary-stat-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.risk-pill-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.risk-stat {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.risk-stat.low { background: #dcfce7; color: #166534; }
+.risk-stat.moderate { background: #fef9c3; color: #854d0e; }
+.risk-stat.high { background: #ffedd5; color: #9a3412; }
+.risk-stat.severe { background: #fee2e2; color: #991b1b; }
+.risk-stat.blocked { background: #0f172a; color: #fca5a5; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.legend-bar {
+  flex: 1;
+  min-width: 140px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.legend-grad {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, #22c55e, #eab308, #f97316, #ef4444, #7f1d1d);
+}
+
+.legend-keys {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Checkpoint Table & Log
+   ========================================================================== */
+
+.checkpoint-table-card {
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.25rem;
+}
+
+.collapse-header-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.checkpoint-table-wrapper {
+  max-height: 380px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.checkpoint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.checkpoint-table th {
+  position: sticky;
+  top: 0;
+  background: #f1f5f9;
+  color: var(--text-primary);
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  z-index: 10;
+}
+
+.checkpoint-table td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.cp-row {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.cp-row:hover {
+  background: #fefce8;
+}
+
+.cp-row.selected-row {
+  background: var(--yellow-100);
+}
+
+.cp-pin-badge {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.highlight-danger {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.level-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.level-low { background: #dcfce7; color: #166534; }
+.level-moderate { background: #fef9c3; color: #854d0e; }
+.level-high { background: #ffedd5; color: #9a3412; }
+.level-severe { background: #fee2e2; color: #991b1b; }
+.level-no_travel { background: #0f172a; color: #fca5a5; }
+
+.pin-view-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.pin-view-btn:hover {
+  background: var(--yellow-400);
+  color: #000;
+  border-color: var(--yellow-500);
+}

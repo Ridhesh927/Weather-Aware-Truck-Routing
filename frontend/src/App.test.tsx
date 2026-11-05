@@ -136,9 +136,24 @@ describe('App Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Route Risk Comparison/)).toBeInTheDocument()
-      expect(screen.getByText('Route 1 (via NH48)')).toBeInTheDocument()
+      expect(screen.getAllByText(/Route 1 \(via NH48\)/).length).toBeGreaterThanOrEqual(1)
       expect(screen.getByText(/RECOMMENDED \(SAFEST\)/)).toBeInTheDocument()
       expect(screen.getByText(/NO TRAVEL \(BLOCKED\)/)).toBeInTheDocument()
+      expect(screen.getByText(/Corridor Weather Heatmap Scrubber/)).toBeInTheDocument()
     })
+  })
+
+  it('toggles Holo Card showcase when button is clicked', async () => {
+    render(<App />)
+    const holoButton = screen.getByRole('button', { name: /Holo Card Badge/i })
+    expect(holoButton).toBeInTheDocument()
+
+    fireEvent.click(holoButton)
+    expect(screen.getByText(/Holographic Foil Card Component \(WebGL2\)/)).toBeInTheDocument()
+    expect(screen.getByText('Hide Holo Card')).toBeInTheDocument()
+
+    const closeButton = screen.getByRole('button', { name: /✕ Close/i })
+    fireEvent.click(closeButton)
+    expect(screen.queryByText(/Holographic Foil Card Component/)).not.toBeInTheDocument()
   })
 })
