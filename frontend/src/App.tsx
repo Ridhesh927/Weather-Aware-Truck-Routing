@@ -8,6 +8,11 @@ import {
   CheckCircle2,
   MapPin,
   Compass,
+  Clock,
+  Gauge,
+  Navigation,
+  Loader2,
+  XCircle,
 } from 'lucide-react'
 import './App.css'
 
@@ -22,6 +27,52 @@ interface CorridorPreset {
   origin: string
   destination: string
   terrain: string
+  loadLb: number
+}
+
+interface Checkpoint {
+  id: number
+  lat: number
+  lon: number
+  mile_marker: number
+  segment_miles: number
+  eta: string
+  wind_mph: number
+  rain_in_hr: number
+  snow_in_hr: number
+  level: 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE' | 'NO_TRAVEL'
+}
+
+interface RouteSummary {
+  total_miles: number
+  total_minutes: number
+  severe_miles: number
+  high_miles: number
+  average_risk: number
+  blocked: boolean
+}
+
+interface RouteOption {
+  id: number
+  name: string
+  profile: string
+  geometry: [number, number][]
+  total_miles: number
+  total_minutes: number
+  summary: RouteSummary
+  checkpoints: Checkpoint[]
+}
+
+interface PlanResponse {
+  origin: { label: string; lat: number; lon: number }
+  destination: { label: string; lat: number; lon: number }
+  departure_at: string
+  load_lb: number
+  interval_miles: number
+  routes: RouteOption[]
+  recommended_index: number | null
+  recommendation_reason: string
+  heatmap: { lat: number; lon: number; hourly_risks: string[] }[]
 }
 
 const SOUTH_ASIA_PRESETS: CorridorPreset[] = [
@@ -30,37 +81,63 @@ const SOUTH_ASIA_PRESETS: CorridorPreset[] = [
     origin: 'Mumbai, Maharashtra, India',
     destination: 'New Delhi, Delhi, India',
     terrain: 'Western Corridor (NH48) • 1,420 km',
+    loadLb: 35000,
   },
   {
     name: 'Delhi ➔ Kolkata',
     origin: 'New Delhi, Delhi, India',
     destination: 'Kolkata, West Bengal, India',
     terrain: 'Grand Trunk Road (NH19) • 1,510 km',
+    loadLb: 30000,
   },
   {
     name: 'Bengaluru ➔ Chennai',
     origin: 'Bengaluru, Karnataka, India',
     destination: 'Chennai, Tamil Nadu, India',
     terrain: 'Industrial Expressway • 345 km',
+    loadLb: 42000,
   },
   {
     name: 'Delhi ➔ Srinagar',
     origin: 'New Delhi, Delhi, India',
     destination: 'Srinagar, Jammu & Kashmir, India',
     terrain: 'Himalayan Pass (Snow/Freeze Risk) • 810 km',
+    loadLb: 28000,
   },
   {
     name: 'Pune ➔ Hyderabad',
     origin: 'Pune, Maharashtra, India',
     destination: 'Hyderabad, Telangana, India',
     terrain: 'Deccan Plateau Corridor • 560 km',
+    loadLb: 38000,
   },
 ]
+
+function formatMinutes(minutes: number): string {
+  const hrs = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  return `${hrs}h ${mins}m`
+}
 
 function App() {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
   const [healthData, setHealthData] = useState<HealthResponse | null>(null)
-  const [selectedPreset, setSelectedPreset] = useState<CorridorPreset | null>(SOUTH_ASIA_PRESETS[0])
+
+  // Form states
+  const [origin, setOrigin] = useState(SOUTH_ASIA_PRESETS[0].origin)
+  const [destination, setDestination] = useState(SOUTH_ASIA_PRESETS[0].destination)
+  const [loadLb, setLoadLb] = useState<number>(35000)
+  const [intervalMiles, setIntervalMiles] = useState<number>(25)
+
+  // Get local ISO string for datetime-local input
+  const defaultDeparture = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)
+  const [departureAt, setDepartureAt] = useState<string>(defaultDeparture)
+
+  // Plan result & UI states
+  const [isPlanning, setIsPlanning] = useState<boolean>(false)
+  const [planError, setPlanError] = useState<string | null>(null)
+  const [planResult, setPlanResult] = useState<PlanResponse | null>(null)
+  const [selectedRouteId, setSelectedRouteId] = useState<number>(0)
 
   useEffect(() => {
     fetch('/api/health/')
@@ -76,6 +153,50 @@ function App() {
         setBackendStatus('disconnected')
       })
   }, [])
+
+  const handleSelectPreset = (preset: CorridorPreset) => {
+    setOrigin(preset.origin)
+    setDestination(preset.destination)
+    setLoadLb(preset.loadLb)
+    setPlanError(null)
+  }
+
+  const handlePlanTrip = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPlanError(null)
+    setIsPlanning(true)
+
+    try {
+      const response = await fetch('/api/trips/plan/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origin,
+          destination,
+          departure_at: new Date(departureAt).toISOString(),
+          load_lb: Number(loadLb),
+          interval_miles: Number(intervalMiles),
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to calculate trip routes.')
+      }
+
+      setPlanResult(data)
+      if (data.recommended_index !== null && data.recommended_index !== undefined) {
+        setSelectedRouteId(data.recommended_index)
+      } else {
+        setSelectedRouteId(0)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred while planning the trip.'
+      setPlanError(msg)
+    } finally {
+      setIsPlanning(false)
+    }
+  }
 
   return (
     <div className="app-container">
@@ -100,7 +221,7 @@ function App() {
         </div>
       </header>
 
-      {/* Regional Freight Corridors Banner */}
+      {/* Regional Freight Corridors Quick Select */}
       <section className="region-banner">
         <div className="region-content">
           <h2>
@@ -110,11 +231,6 @@ function App() {
           <p>
             Evaluate monsoon precipitation, dust storm wind shears, and Himalayan mountain snow for heavy commercial loads.
           </p>
-          {selectedPreset && (
-            <p style={{ marginTop: '0.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Active Corridor: <span style={{ color: 'var(--yellow-700)' }}>{selectedPreset.name}</span> ({selectedPreset.terrain})
-            </p>
-          )}
         </div>
         <div className="presets-container">
           <span className="presets-label">Quick Corridor Presets</span>
@@ -124,7 +240,7 @@ function App() {
                 key={preset.name}
                 type="button"
                 className="preset-btn"
-                onClick={() => setSelectedPreset(preset)}
+                onClick={() => handleSelectPreset(preset)}
               >
                 <MapPin size={12} style={{ display: 'inline', marginRight: 4 }} />
                 {preset.name}
@@ -133,6 +249,214 @@ function App() {
           </div>
         </div>
       </section>
+
+      {/* Trip Planning Form */}
+      <section className="card plan-form-card" style={{ marginBottom: '2rem' }}>
+        <div className="card-title">
+          <div className="card-icon-box">
+            <Navigation size={20} />
+          </div>
+          <h3>Plan Weather-Safe Commercial Haul</h3>
+        </div>
+
+        <form onSubmit={handlePlanTrip} className="trip-form">
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="origin-input">Origin Location</label>
+              <input
+                id="origin-input"
+                type="text"
+                className="form-input"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                placeholder="e.g. Mumbai, Maharashtra, India"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="destination-input">Destination Location</label>
+              <input
+                id="destination-input"
+                type="text"
+                className="form-input"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g. New Delhi, Delhi, India"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="departure-input">Departure Date &amp; Time</label>
+              <input
+                id="departure-input"
+                type="datetime-local"
+                className="form-input"
+                value={departureAt}
+                onChange={(e) => setDepartureAt(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="load-input">Cargo Load Weight (lb)</label>
+              <input
+                id="load-input"
+                type="number"
+                className="form-input"
+                value={loadLb}
+                onChange={(e) => setLoadLb(Math.max(0, Number(e.target.value)))}
+                min="0"
+                step="1000"
+                placeholder="e.g. 35000"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="interval-select">Sample Interval (miles)</label>
+              <select
+                id="interval-select"
+                className="form-input"
+                value={intervalMiles}
+                onChange={(e) => setIntervalMiles(Number(e.target.value))}
+              >
+                <option value={10}>10 miles (High Density)</option>
+                <option value={25}>25 miles (Standard Recommended)</option>
+                <option value={50}>50 miles (Fast Corridor)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              type="submit"
+              disabled={isPlanning}
+              className="preset-btn"
+              style={{
+                background: 'var(--yellow-400)',
+                color: '#000',
+                padding: '0.65rem 1.5rem',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              {isPlanning ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Evaluating Weather Hazards...
+                </>
+              ) : (
+                <>
+                  <Navigation size={18} />
+                  Calculate Safest Route
+                </>
+              )}
+            </button>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Evaluates 3 alternative routes with OpenRouteService &amp; Open-Meteo forecasts
+            </span>
+          </div>
+
+          {planError && (
+            <div className="error-banner" style={{ marginTop: '1rem' }}>
+              <XCircle size={18} />
+              <span>{planError}</span>
+            </div>
+          )}
+        </form>
+      </section>
+
+      {/* Plan Results Comparison Cards */}
+      {planResult && (
+        <section className="results-section" style={{ marginBottom: '2.5rem' }}>
+          <div className="results-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>
+              <ShieldCheck size={22} style={{ color: 'var(--yellow-600)', display: 'inline', marginRight: 8 }} />
+              Route Risk Comparison ({planResult.routes.length} Alternatives)
+            </h2>
+            {planResult.recommendation_reason && (
+              <p className="recommendation-banner" style={{ marginTop: '0.5rem' }}>
+                <strong>Recommendation:</strong> {planResult.recommendation_reason}
+              </p>
+            )}
+          </div>
+
+          <div className="grid-cards">
+            {planResult.routes.map((route, idx) => {
+              const isRecommended = planResult.recommended_index === idx
+              const isBlocked = route.summary.blocked
+              const isSelected = selectedRouteId === idx
+
+              return (
+                <div
+                  key={route.id}
+                  className={`card route-card ${isRecommended ? 'recommended-card' : ''} ${isBlocked ? 'blocked-card' : ''} ${isSelected ? 'selected-card' : ''}`}
+                  onClick={() => setSelectedRouteId(idx)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                    <div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{route.name}</h4>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{route.profile}</span>
+                    </div>
+                    {isRecommended && (
+                      <span className="badge badge-recommended">
+                        ★ RECOMMENDED (SAFEST)
+                      </span>
+                    )}
+                    {isBlocked && (
+                      <span className="badge badge-blocked">
+                        ⛔ NO TRAVEL (BLOCKED)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="metrics-grid">
+                    <div className="metric-box">
+                      <span className="metric-label"><Gauge size={12} /> Distance</span>
+                      <span className="metric-value">{route.summary.total_miles} mi</span>
+                    </div>
+                    <div className="metric-box">
+                      <span className="metric-label"><Clock size={12} /> Travel Time</span>
+                      <span className="metric-value">{formatMinutes(route.summary.total_minutes)}</span>
+                    </div>
+                    <div className="metric-box">
+                      <span className="metric-label"><AlertTriangle size={12} /> Severe Miles</span>
+                      <span className="metric-value" style={{ color: route.summary.severe_miles > 0 ? 'var(--danger)' : 'inherit' }}>
+                        {route.summary.severe_miles} mi
+                      </span>
+                    </div>
+                    <div className="metric-box">
+                      <span className="metric-label"><Wind size={12} /> High Miles</span>
+                      <span className="metric-value" style={{ color: route.summary.high_miles > 0 ? 'var(--warning)' : 'inherit' }}>
+                        {route.summary.high_miles} mi
+                      </span>
+                    </div>
+                    <div className="metric-box" style={{ gridColumn: 'span 2' }}>
+                      <span className="metric-label"><ShieldCheck size={12} /> Average Risk Score (1-5)</span>
+                      <span className="metric-value" style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+                        {route.summary.average_risk.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{route.checkpoints.length} Checkpoints sampled</span>
+                    <span style={{ color: isSelected ? 'var(--yellow-700)' : 'inherit', fontWeight: 600 }}>
+                      {isSelected ? '✓ Selected for inspection' : 'Click to inspect'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Risk Engine Rules Cards */}
       <main className="grid-cards">
@@ -216,7 +540,7 @@ function App() {
       {healthData && (
         <footer style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           <CheckCircle2 size={15} style={{ display: 'inline', marginRight: 6, color: 'var(--success)' }} />
-          Verified Backend Service: <strong>{healthData.service}</strong> • Ready for Phase 2 Routing
+          Verified Backend Service: <strong>{healthData.service}</strong> • Phase 2 Trip Planner Active
         </footer>
       )}
     </div>

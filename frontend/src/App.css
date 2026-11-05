@@ -193,7 +193,159 @@ body {
   box-shadow: 0 3px 8px rgba(234, 179, 8, 0.25);
 }
 
-/* Grid Cards */
+/* Plan Form */
+.plan-form-card {
+  border-top: 3px solid var(--yellow-400);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--yellow-500);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+/* Results Section & Route Cards */
+.results-section {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.recommendation-banner {
+  background: var(--yellow-50);
+  border: 1px solid var(--yellow-300);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--yellow-700);
+  font-size: 0.92rem;
+}
+
+.route-card {
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border);
+}
+
+.route-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--yellow-400);
+}
+
+.selected-card {
+  border-color: var(--yellow-500) !important;
+  box-shadow: 0 4px 16px rgba(234, 179, 8, 0.2) !important;
+}
+
+.recommended-card {
+  border-color: var(--success);
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 40%);
+}
+
+.blocked-card {
+  border-color: var(--danger);
+  background: linear-gradient(180deg, #fef2f2 0%, #ffffff 40%);
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-recommended {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge-blocked {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.metric-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.metric-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.15rem;
+}
+
+/* Grid Cards (Risk Engine) */
 .grid-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -285,4 +437,17 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
