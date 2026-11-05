@@ -13,12 +13,14 @@ import {
   Navigation,
   Loader2,
   XCircle,
+  Activity,
 } from 'lucide-react'
 import './App.css'
 import { RouteMap } from './components/RouteMap'
 import { TimelineSlider } from './components/TimelineSlider'
 import { CheckpointTable } from './components/CheckpointTable'
 import { TiltCard } from './components/TiltCard'
+import { GradientASCII, ASCIIShape } from './components/GradientASCII'
 
 interface HealthResponse {
   status: string
@@ -150,6 +152,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [selectedCheckpointId, setSelectedCheckpointId] = useState<number | null>(null)
 
+  // Atmospheric Full-Page ASCII Background State
+  const [bgShape, setBgShape] = useState<ASCIIShape>('horizon')
+
   // Auto-advance timeline animation effect
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null
@@ -233,30 +238,60 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      {/* Top Header */}
-      <header className="app-header">
-        <div className="header-brand">
-          <div className="brand-icon-box">
-            <Truck size={26} />
-          </div>
-          <div>
-            <h1>Weather-Aware Truck Routing</h1>
-            <p className="subtitle">High-Visibility Logistics Risk Management • South Asia &amp; India Network</p>
-          </div>
-        </div>
-        <div className={`status-badge status-${backendStatus}`}>
-          <span className="status-dot"></span>
-          <span>
-            {backendStatus === 'connected' && 'API Connected'}
-            {backendStatus === 'checking' && 'Connecting to API...'}
-            {backendStatus === 'disconnected' && 'API Offline'}
-          </span>
-        </div>
-      </header>
+    <>
+      {/* Full-Page Background GradientASCII WebGL Drift */}
+      <div className="app-gradient-ascii-bg" aria-hidden="true">
+        <GradientASCII
+          colors={['#1e3fd8', '#f6f8ff', '#a5d8ff', '#38bdf8']}
+          shape={bgShape}
+          characters=" =+xX0S8#@"
+          cellSize={18}
+          density={0.8}
+        />
+      </div>
 
-      {/* Regional Freight Corridors (Second Component) with Interactive 3D Movement */}
-      <TiltCard tiltMax={5} scale={1.008} glare={true} style={{ marginBottom: '2rem' }}>
+      <div className="app-container">
+        {/* Top Header */}
+        <header className="app-header">
+          <div className="header-brand">
+            <div className="brand-icon-box">
+              <Truck size={26} />
+            </div>
+            <div>
+              <h1>Weather-Aware Truck Routing</h1>
+              <p className="subtitle">High-Visibility Logistics Risk Management • South Asia &amp; India Network</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div className="ascii-shape-selector">
+              <span className="ascii-label">
+                <Activity size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                Background:
+              </span>
+              {(['horizon', 'pinch', 'rise', 'eclipse'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setBgShape(s)}
+                  className={`ascii-preset-pill ${bgShape === s ? 'active-ascii-pill' : ''}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className={`status-badge status-${backendStatus}`}>
+              <span className="status-dot"></span>
+              <span>
+                {backendStatus === 'connected' && 'API Connected'}
+                {backendStatus === 'checking' && 'Connecting to API...'}
+                {backendStatus === 'disconnected' && 'API Offline'}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Regional Freight Corridors (Second Component) with Interactive 3D Movement */}
+        <TiltCard tiltMax={5} scale={1.008} glare={true} style={{ marginBottom: '2rem' }}>
         <section className="region-banner" style={{ marginBottom: 0 }}>
           <div className="region-content">
             <h2>
@@ -618,12 +653,13 @@ function App() {
 
       {/* Backend Status Verification */}
       {healthData && (
-        <footer style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+        <footer style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
           <CheckCircle2 size={15} style={{ display: 'inline', marginRight: 6, color: 'var(--success)' }} />
           Verified Backend Service: <strong>{healthData.service}</strong> • Phase 2 Trip Planner Active
         </footer>
       )}
     </div>
+    </>
   )
 }
 
