@@ -143,17 +143,15 @@ describe('App Component', () => {
     })
   })
 
-  it('toggles Holo Card showcase when button is clicked', async () => {
+  it('renders embedded Holo Card inside corridor banner and updates on preset click', async () => {
     render(<App />)
-    const holoButton = screen.getByRole('button', { name: /Holo Card Badge/i })
-    expect(holoButton).toBeInTheDocument()
+    expect(screen.getByText(/Route Holo Pass/i)).toBeInTheDocument()
+    expect(screen.getByText(/National Highway 48/i)).toBeInTheDocument()
 
-    fireEvent.click(holoButton)
-    expect(screen.getByText(/Holographic Foil Card Component \(WebGL2\)/)).toBeInTheDocument()
-    expect(screen.getByText('Hide Holo Card')).toBeInTheDocument()
+    const srinagarPreset = screen.getByRole('button', { name: /Delhi ➔ Srinagar/i })
+    fireEvent.click(srinagarPreset)
 
-    const closeButton = screen.getByRole('button', { name: /✕ Close/i })
-    fireEvent.click(closeButton)
-    expect(screen.queryByText(/Holographic Foil Card Component/)).not.toBeInTheDocument()
+    expect(screen.getByText(/National Highway 44/i)).toBeInTheDocument()
+    expect(screen.getByText(/Mountain Pass Special/i)).toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ShieldCheck,
   CloudRain,
@@ -20,6 +20,7 @@ import { RouteMap } from './components/RouteMap'
 import { TimelineSlider } from './components/TimelineSlider'
 import { CheckpointTable } from './components/CheckpointTable'
 import HoloCard from './components/HoloCard'
+import { CORRIDOR_SPECS, generateCorridorCardSvg } from './utils/corridorCards'
 
 interface HealthResponse {
   status: string
@@ -129,6 +130,7 @@ function App() {
   const [healthData, setHealthData] = useState<HealthResponse | null>(null)
 
   // Form states
+  const [selectedPreset, setSelectedPreset] = useState<CorridorPreset>(SOUTH_ASIA_PRESETS[0])
   const [origin, setOrigin] = useState(SOUTH_ASIA_PRESETS[0].origin)
   const [destination, setDestination] = useState(SOUTH_ASIA_PRESETS[0].destination)
   const [loadLb, setLoadLb] = useState<number>(35000)
@@ -149,7 +151,15 @@ function App() {
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [selectedCheckpointId, setSelectedCheckpointId] = useState<number | null>(null)
-  const [showHoloCard, setShowHoloCard] = useState<boolean>(false)
+
+  // Corridor Collectible Holo Pass Art Specs
+  const activeCardSpec = useMemo(() => {
+    return CORRIDOR_SPECS[selectedPreset.name] || CORRIDOR_SPECS['Mumbai ➔ Delhi']
+  }, [selectedPreset.name])
+
+  const corridorCardSvg = useMemo(() => {
+    return generateCorridorCardSvg(activeCardSpec)
+  }, [activeCardSpec])
 
   // Auto-advance timeline animation effect
   useEffect(() => {
@@ -186,6 +196,7 @@ function App() {
   }, [])
 
   const handleSelectPreset = (preset: CorridorPreset) => {
+    setSelectedPreset(preset)
     setOrigin(preset.origin)
     setDestination(preset.destination)
     setLoadLb(preset.loadLb)
@@ -245,106 +256,99 @@ function App() {
             <p className="subtitle">High-Visibility Logistics Risk Management • South Asia &amp; India Network</p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="preset-btn"
-            onClick={() => setShowHoloCard((prev) => !prev)}
-            style={{
-              background: showHoloCard ? 'var(--yellow-400)' : '#f1f5f9',
-              color: showHoloCard ? '#000' : 'var(--text-secondary)',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.4rem 0.85rem',
-            }}
-          >
-            <Sparkles size={15} />
-            <span>{showHoloCard ? 'Hide Holo Card' : 'Holo Card Badge'}</span>
-          </button>
-          <div className={`status-badge status-${backendStatus}`}>
-            <span className="status-dot"></span>
-            <span>
-              {backendStatus === 'connected' && 'API Connected'}
-              {backendStatus === 'checking' && 'Connecting to API...'}
-              {backendStatus === 'disconnected' && 'API Offline'}
-            </span>
-          </div>
+        <div className={`status-badge status-${backendStatus}`}>
+          <span className="status-dot"></span>
+          <span>
+            {backendStatus === 'connected' && 'API Connected'}
+            {backendStatus === 'checking' && 'Connecting to API...'}
+            {backendStatus === 'disconnected' && 'API Offline'}
+          </span>
         </div>
       </header>
 
-      {/* HoloCard Showcase Section */}
-      {showHoloCard && (
-        <section className="card" style={{ marginBottom: '2rem', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={20} style={{ color: 'var(--yellow-600)' }} />
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
-                Holographic Foil Card Component (WebGL2)
-              </h3>
-            </div>
-            <button
-              type="button"
-              className="preset-btn"
-              onClick={() => setShowHoloCard(false)}
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
-            >
-              ✕ Close
-            </button>
-          </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-            Move mouse or touch to tilt and experience real-time holographic rainbow diffraction, foil bursts, and edge glitter physics.
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
-            <HoloCard
-              alt="Pikachu"
-              preset="bursts"
-              card="pikachu"
-              foilColor="#e2e6ec"
-              intensity={0.85}
-              scale={1}
-              edgeSparkle={0.8}
-              frame={4}
-              glare={0.5}
-              tiltMax={14}
-              hoverScale={1.04}
-              radius={14}
-              width={320}
-              idle
-              shadow
-            />
-          </div>
-        </section>
-      )}
-
-      {/* Regional Freight Corridors Quick Select */}
+      {/* Regional Freight Corridors (Second Component) with Embedded Holographic Route Pass */}
       <section className="region-banner">
-        <div className="region-content">
-          <h2>
-            <Compass size={20} />
-            India &amp; South Asia Freight Corridors
-          </h2>
-          <p>
-            Evaluate monsoon precipitation, dust storm wind shears, and Himalayan mountain snow for heavy commercial loads.
-          </p>
-        </div>
-        <div className="presets-container">
-          <span className="presets-label">Quick Corridor Presets</span>
-          <div className="preset-pills">
-            {SOUTH_ASIA_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                className="preset-btn"
-                onClick={() => handleSelectPreset(preset)}
-              >
-                <MapPin size={12} style={{ display: 'inline', marginRight: 4 }} />
-                {preset.name}
-              </button>
-            ))}
+        <div className="region-content-col">
+          <div className="region-content">
+            <h2>
+              <Compass size={22} />
+              India &amp; South Asia Freight Corridors
+            </h2>
+            <p>
+              Evaluate monsoon precipitation, dust storm wind shears, and Himalayan mountain snow for heavy commercial loads.
+            </p>
           </div>
+
+          <div className="presets-container" style={{ marginTop: '0.85rem' }}>
+            <span className="presets-label">Quick Corridor Presets</span>
+            <div className="preset-pills">
+              {SOUTH_ASIA_PRESETS.map((preset) => {
+                const isSelected = selectedPreset.name === preset.name
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    className={`preset-btn ${isSelected ? 'active-preset-btn' : ''}`}
+                    onClick={() => handleSelectPreset(preset)}
+                  >
+                    <MapPin size={12} style={{ display: 'inline', marginRight: 4 }} />
+                    {preset.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Active Corridor Specifications Card */}
+          <div className="active-corridor-card" style={{ marginTop: '1rem' }}>
+            <div className="corridor-meta-badge">
+              <Sparkles size={13} />
+              <span>{activeCardSpec.classType} • {activeCardSpec.distance}</span>
+            </div>
+            <h4 style={{ margin: '0.4rem 0 0.2rem', fontSize: '1.05rem', fontWeight: 800 }}>
+              {selectedPreset.name} ({activeCardSpec.highway})
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+              {activeCardSpec.description}
+            </p>
+            <div className="corridor-stats-row">
+              <span className="corridor-stat-tag">
+                ⚠️ <strong>Key Hazard:</strong> {activeCardSpec.hazard}
+              </span>
+              <span className="corridor-stat-tag">
+                ⚖️ <strong>Preset Load:</strong> {selectedPreset.loadLb.toLocaleString()} lbs
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Embedded Interactive 3D WebGL Holographic Corridor Pass */}
+        <div className="region-holo-col">
+          <div className="holo-card-badge-header">
+            <span className="holo-badge-label">
+              <Sparkles size={13} style={{ color: 'var(--yellow-600)' }} /> Route Holo Pass
+            </span>
+            <span className="holo-badge-hint">Interactive 3D Tilt</span>
+          </div>
+
+          <HoloCard
+            image={corridorCardSvg}
+            alt={selectedPreset.name}
+            card={activeCardSpec.id}
+            preset={activeCardSpec.preset}
+            foilColor={activeCardSpec.foilColor}
+            intensity={0.88}
+            scale={1}
+            edgeSparkle={0.85}
+            frame={4}
+            glare={0.55}
+            tiltMax={16}
+            hoverScale={1.05}
+            radius={14}
+            width={260}
+            idle
+            shadow
+          />
         </div>
       </section>
 
