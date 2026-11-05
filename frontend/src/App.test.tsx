@@ -143,15 +143,16 @@ describe('App Component', () => {
     })
   })
 
-  it('renders embedded Holo Card inside corridor banner and updates on preset click', async () => {
+  it('updates selected corridor when preset is clicked', async () => {
     render(<App />)
-    expect(screen.getByText(/Route Holo Pass/i)).toBeInTheDocument()
-    expect(screen.getByText(/National Highway 48/i)).toBeInTheDocument()
+    expect(screen.getByText('India & South Asia Freight Corridors')).toBeInTheDocument()
 
     const srinagarPreset = screen.getByRole('button', { name: /Delhi ➔ Srinagar/i })
     fireEvent.click(srinagarPreset)
 
-    expect(screen.getByText(/National Highway 44/i)).toBeInTheDocument()
-    expect(screen.getByText(/Mountain Pass Special/i)).toBeInTheDocument()
+    const originInput = screen.getByLabelText(/Origin Location/i) as HTMLInputElement
+    expect(originInput.value).toBe('New Delhi, Delhi, India')
+    const destInput = screen.getByLabelText(/Destination Location/i) as HTMLInputElement
+    expect(destInput.value).toBe('Srinagar, Jammu & Kashmir, India')
   })
 })

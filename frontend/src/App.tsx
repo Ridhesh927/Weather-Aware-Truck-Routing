@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ShieldCheck,
   CloudRain,
@@ -13,14 +13,12 @@ import {
   Navigation,
   Loader2,
   XCircle,
-  Sparkles,
 } from 'lucide-react'
 import './App.css'
 import { RouteMap } from './components/RouteMap'
 import { TimelineSlider } from './components/TimelineSlider'
 import { CheckpointTable } from './components/CheckpointTable'
-import HoloCard from './components/HoloCard'
-import { CORRIDOR_SPECS, generateCorridorCardSvg } from './utils/corridorCards'
+import { TiltCard } from './components/TiltCard'
 
 interface HealthResponse {
   status: string
@@ -152,15 +150,6 @@ function App() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [selectedCheckpointId, setSelectedCheckpointId] = useState<number | null>(null)
 
-  // Corridor Collectible Holo Pass Art Specs
-  const activeCardSpec = useMemo(() => {
-    return CORRIDOR_SPECS[selectedPreset.name] || CORRIDOR_SPECS['Mumbai ➔ Delhi']
-  }, [selectedPreset.name])
-
-  const corridorCardSvg = useMemo(() => {
-    return generateCorridorCardSvg(activeCardSpec)
-  }, [activeCardSpec])
-
   // Auto-advance timeline animation effect
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null
@@ -266,9 +255,9 @@ function App() {
         </div>
       </header>
 
-      {/* Regional Freight Corridors (Second Component) with Embedded Holographic Route Pass */}
-      <section className="region-banner">
-        <div className="region-content-col">
+      {/* Regional Freight Corridors (Second Component) with Interactive 3D Movement */}
+      <TiltCard tiltMax={5} scale={1.008} glare={true} style={{ marginBottom: '2rem' }}>
+        <section className="region-banner" style={{ marginBottom: 0 }}>
           <div className="region-content">
             <h2>
               <Compass size={22} />
@@ -278,8 +267,7 @@ function App() {
               Evaluate monsoon precipitation, dust storm wind shears, and Himalayan mountain snow for heavy commercial loads.
             </p>
           </div>
-
-          <div className="presets-container" style={{ marginTop: '0.85rem' }}>
+          <div className="presets-container">
             <span className="presets-label">Quick Corridor Presets</span>
             <div className="preset-pills">
               {SOUTH_ASIA_PRESETS.map((preset) => {
@@ -298,59 +286,8 @@ function App() {
               })}
             </div>
           </div>
-
-          {/* Active Corridor Specifications Card */}
-          <div className="active-corridor-card" style={{ marginTop: '1rem' }}>
-            <div className="corridor-meta-badge">
-              <Sparkles size={13} />
-              <span>{activeCardSpec.classType} • {activeCardSpec.distance}</span>
-            </div>
-            <h4 style={{ margin: '0.4rem 0 0.2rem', fontSize: '1.05rem', fontWeight: 800 }}>
-              {selectedPreset.name} ({activeCardSpec.highway})
-            </h4>
-            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-              {activeCardSpec.description}
-            </p>
-            <div className="corridor-stats-row">
-              <span className="corridor-stat-tag">
-                ⚠️ <strong>Key Hazard:</strong> {activeCardSpec.hazard}
-              </span>
-              <span className="corridor-stat-tag">
-                ⚖️ <strong>Preset Load:</strong> {selectedPreset.loadLb.toLocaleString()} lbs
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Embedded Interactive 3D WebGL Holographic Corridor Pass */}
-        <div className="region-holo-col">
-          <div className="holo-card-badge-header">
-            <span className="holo-badge-label">
-              <Sparkles size={13} style={{ color: 'var(--yellow-600)' }} /> Route Holo Pass
-            </span>
-            <span className="holo-badge-hint">Interactive 3D Tilt</span>
-          </div>
-
-          <HoloCard
-            image={corridorCardSvg}
-            alt={selectedPreset.name}
-            card={activeCardSpec.id}
-            preset={activeCardSpec.preset}
-            foilColor={activeCardSpec.foilColor}
-            intensity={0.88}
-            scale={1}
-            edgeSparkle={0.85}
-            frame={4}
-            glare={0.55}
-            tiltMax={16}
-            hoverScale={1.05}
-            radius={14}
-            width={260}
-            idle
-            shadow
-          />
-        </div>
-      </section>
+        </section>
+      </TiltCard>
 
       {/* Trip Planning Form */}
       <section className="card plan-form-card" style={{ marginBottom: '2rem' }}>
@@ -495,8 +432,11 @@ function App() {
               const isSelected = selectedRouteId === idx
 
               return (
-                <div
+                <TiltCard
                   key={route.id}
+                  tiltMax={6}
+                  scale={1.015}
+                  glare={true}
                   className={`card route-card ${isRecommended ? 'recommended-card' : ''} ${isBlocked ? 'blocked-card' : ''} ${isSelected ? 'selected-card' : ''}`}
                   onClick={() => setSelectedRouteId(idx)}
                   style={{ cursor: 'pointer' }}
@@ -553,7 +493,7 @@ function App() {
                       {isSelected ? '✓ Selected for inspection' : 'Click to inspect'}
                     </span>
                   </div>
-                </div>
+                </TiltCard>
               )
             })}
           </div>
