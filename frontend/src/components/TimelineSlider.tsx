@@ -248,3 +248,4 @@ export const TimelineSlider: React.FC<TimelineSliderProps> = ({
     </div>
   )
 }
+
