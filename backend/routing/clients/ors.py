@@ -17,8 +17,24 @@ from routing.geo import haversine_distance
 
 logger = logging.getLogger(__name__)
 
-# Major South Asian & Indian commercial freight hubs fallback registry
+# Major US & Global commercial freight hubs fallback registry
 CITY_REGISTRY: dict[str, tuple[float, float, str]] = {
+    # US Major Logistics & Freight Hubs
+    "chicago": (41.8781, -87.6298, "Chicago, Illinois, USA"),
+    "dallas": (32.7767, -96.7970, "Dallas, Texas, USA"),
+    "fort worth": (32.7555, -97.3308, "Fort Worth, Texas, USA"),
+    "los angeles": (34.0522, -118.2437, "Los Angeles, California, USA"),
+    "phoenix": (33.4484, -112.0740, "Phoenix, Arizona, USA"),
+    "denver": (39.7392, -104.9903, "Denver, Colorado, USA"),
+    "salt lake city": (40.7608, -111.8910, "Salt Lake City, Utah, USA"),
+    "salt lake": (40.7608, -111.8910, "Salt Lake City, Utah, USA"),
+    "atlanta": (33.7490, -84.3880, "Atlanta, Georgia, USA"),
+    "new york": (40.7128, -74.0060, "New York, New York, USA"),
+    "seattle": (47.6062, -122.3321, "Seattle, Washington, USA"),
+    "houston": (29.7604, -95.3698, "Houston, Texas, USA"),
+    "memphis": (35.1495, -90.0490, "Memphis, Tennessee, USA"),
+    "kansas city": (39.0997, -94.5786, "Kansas City, Missouri, USA"),
+    # Indian & South Asian Commercial Corridors
     "mumbai": (19.0760, 72.8777, "Mumbai, Maharashtra, India"),
     "delhi": (28.6139, 77.2090, "New Delhi, Delhi, India"),
     "new delhi": (28.6139, 77.2090, "New Delhi, Delhi, India"),

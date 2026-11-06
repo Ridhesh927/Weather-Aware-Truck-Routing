@@ -81,43 +81,51 @@ interface PlanResponse {
   heatmap: { lat: number; lon: number; hourly_risks: string[] }[]
 }
 
-const SOUTH_ASIA_PRESETS: CorridorPreset[] = [
+const CORRIDOR_PRESETS: CorridorPreset[] = [
+  {
+    name: 'Chicago ➔ Dallas',
+    origin: 'Chicago, IL',
+    destination: 'Dallas, TX',
+    terrain: 'I-55 / I-35 Freight Corridor • 950 mi',
+    loadLb: 35000,
+  },
+  {
+    name: 'Denver ➔ Salt Lake',
+    origin: 'Denver, CO',
+    destination: 'Salt Lake City, UT',
+    terrain: 'I-70 / I-80 Mountain Pass (Snow Risk) • 520 mi',
+    loadLb: 42000,
+  },
+  {
+    name: 'LA ➔ Phoenix',
+    origin: 'Los Angeles, CA',
+    destination: 'Phoenix, AZ',
+    terrain: 'I-10 High Wind Desert Corridor • 370 mi',
+    loadLb: 45000,
+  },
   {
     name: 'Mumbai ➔ Delhi',
     origin: 'Mumbai, Maharashtra, India',
     destination: 'New Delhi, Delhi, India',
-    terrain: 'Western Corridor (NH48) • 1,420 km',
+    terrain: 'Western Corridor (NH48) • 880 mi',
     loadLb: 35000,
-  },
-  {
-    name: 'Delhi ➔ Kolkata',
-    origin: 'New Delhi, Delhi, India',
-    destination: 'Kolkata, West Bengal, India',
-    terrain: 'Grand Trunk Road (NH19) • 1,510 km',
-    loadLb: 30000,
   },
   {
     name: 'Bengaluru ➔ Chennai',
     origin: 'Bengaluru, Karnataka, India',
     destination: 'Chennai, Tamil Nadu, India',
-    terrain: 'Industrial Expressway • 345 km',
+    terrain: 'Industrial Expressway • 215 mi',
     loadLb: 42000,
   },
   {
     name: 'Delhi ➔ Srinagar',
     origin: 'New Delhi, Delhi, India',
     destination: 'Srinagar, Jammu & Kashmir, India',
-    terrain: 'Himalayan Pass (Snow/Freeze Risk) • 810 km',
+    terrain: 'Himalayan Pass (Snow/Freeze Risk) • 500 mi',
     loadLb: 28000,
   },
-  {
-    name: 'Pune ➔ Hyderabad',
-    origin: 'Pune, Maharashtra, India',
-    destination: 'Hyderabad, Telangana, India',
-    terrain: 'Deccan Plateau Corridor • 560 km',
-    loadLb: 38000,
-  },
 ]
+const SOUTH_ASIA_PRESETS = CORRIDOR_PRESETS
 
 function formatMinutes(minutes: number): string {
   const hrs = Math.floor(minutes / 60)
@@ -335,7 +343,7 @@ function App() {
                 className="form-input"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                placeholder="e.g. Mumbai, Maharashtra, India"
+                placeholder="e.g. Chicago, IL or Mumbai, India"
                 required
               />
             </div>
@@ -348,7 +356,7 @@ function App() {
                 className="form-input"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="e.g. New Delhi, Delhi, India"
+                placeholder="e.g. Dallas, TX or Delhi, India"
                 required
               />
             </div>
