@@ -3,6 +3,7 @@ End-to-end scenario tests for realistic trucking corridors across India and Sout
 Tests multi-route weather evaluation, cargo load escalation differences, and corridor blocking.
 """
 
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -159,10 +160,11 @@ def test_full_route_api_simulation(client):
         }
         mock_wx.compute_hourly_risk_series.return_value = ["LOW"] * 49
 
+        future_dep = (datetime.now(UTC) + timedelta(hours=4)).isoformat()
         payload = {
             "origin": "Bengaluru, India",
             "destination": "Chennai, India",
-            "departure_at": "2026-11-06T06:00:00Z",
+            "departure_at": future_dep,
             "load_lb": 42000,
             "interval_miles": 25,
         }

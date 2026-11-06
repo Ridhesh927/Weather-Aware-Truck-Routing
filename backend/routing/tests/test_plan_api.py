@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -97,10 +98,11 @@ def mock_external_services():
 
 @pytest.mark.django_db
 def test_plan_trip_success(api_client, mock_external_services):
+    future_dep = (datetime.now(UTC) + timedelta(hours=2)).isoformat()
     payload = {
         "origin": "Mumbai, India",
         "destination": "Pune, India",
-        "departure_at": "2026-11-06T08:00:00Z",
+        "departure_at": future_dep,
         "load_lb": 32000,
         "interval_miles": 25,
     }
@@ -189,10 +191,11 @@ def test_plan_trip_all_routes_blocked(api_client, mock_external_services):
         "snow_in_hr": 0.0,
     }
 
+    future_dep = (datetime.now(UTC) + timedelta(hours=3)).isoformat()
     payload = {
         "origin": "Mumbai",
         "destination": "Pune",
-        "departure_at": "2026-11-06T12:00:00Z",
+        "departure_at": future_dep,
     }
     response = api_client.post("/api/trips/plan/", payload, format="json")
     assert response.status_code == 200

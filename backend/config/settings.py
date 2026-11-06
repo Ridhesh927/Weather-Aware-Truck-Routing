@@ -15,10 +15,14 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-allowed_hosts_str = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver")
+allowed_hosts_str = os.getenv(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,testserver,.onrender.com"
+)
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_str.split(",") if h.strip()]
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
+if ".onrender.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".onrender.com")
 
 # OpenRouteService API Key
 ORS_API_KEY = os.getenv("ORS_API_KEY", "")
@@ -101,6 +105,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 frontend_dist = BASE_DIR.parent / "frontend" / "dist"
 STATICFILES_DIRS = [frontend_dist] if frontend_dist.exists() else []
+
+# WhiteNoise settings for serving built React SPA from root /
+WHITENOISE_ROOT = frontend_dist if frontend_dist.exists() else None
+WHITENOISE_INDEX_FILE = True
 
 # WhiteNoise compressed storage for production
 STORAGES = {
