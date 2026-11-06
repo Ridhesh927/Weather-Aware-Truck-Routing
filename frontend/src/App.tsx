@@ -133,6 +133,16 @@ function formatMinutes(minutes: number): string {
   return `${hrs}h ${mins}m`
 }
 
+function getLocalIsoString(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const y = date.getFullYear()
+  const m = pad(date.getMonth() + 1)
+  const d = pad(date.getDate())
+  const h = pad(date.getHours())
+  const min = pad(date.getMinutes())
+  return `${y}-${m}-${d}T${h}:${min}`
+}
+
 const API_BASE_URL =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' ||
@@ -153,7 +163,7 @@ function App() {
   const [intervalMiles, setIntervalMiles] = useState<number>(25)
 
   // Get local ISO string for datetime-local input
-  const defaultDeparture = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)
+  const defaultDeparture = getLocalIsoString(new Date(Date.now() + 60 * 60 * 1000))
   const [departureAt, setDepartureAt] = useState<string>(defaultDeparture)
 
   // Plan result & UI states
@@ -369,6 +379,8 @@ function App() {
                 className="form-input"
                 value={departureAt}
                 onChange={(e) => setDepartureAt(e.target.value)}
+                min={getLocalIsoString(new Date(Date.now() - 15 * 60 * 1000))}
+                max={getLocalIsoString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))}
                 required
               />
             </div>
