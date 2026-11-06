@@ -19,3 +19,4 @@ python manage.py migrate --noinput
 cd ..
 
 echo "=== Build Complete! Ready for Deployment ==="
+

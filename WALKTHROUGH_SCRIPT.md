@@ -110,3 +110,4 @@ Use this script as your guide when recording your Loom demonstration video. It c
 > 4. The 0–48h timeline scrubber visualizes corridor conditions at future hours from departure, while the route recommendation evaluates ETA-based risk.
 >
 > Thank you for watching!"*
+

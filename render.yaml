@@ -19,3 +19,4 @@ services:
         value: "https://weather-aware-truck-routing.onrender.com,http://localhost:5173"
       - key: ORS_API_KEY
         sync: false
+
