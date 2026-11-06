@@ -1,113 +1,140 @@
-# 5–10 Minute Loom Video Walkthrough Script
+# 5–10 Minute Loom Walkthrough Script
+## Weather-Aware Commercial Truck Routing Engine
 
-Use this script as your guide when recording your Loom demonstration video. It covers all evaluation areas: the core problem, system architecture, pure risk engine, live UI demo, assumptions, and CI/CD.
+> **Guiding Principle:** *Prioritize correctness and clarity over extra features.*
+>
+> **Deliverables Covered:**
+> 1. ✅ **GitHub Repository**: Clean modular codebase, 100% passing test suites, strict linting.
+> 2. ✅ **Hosted Application**: Live Vercel Frontend + Production Render Backend.
+> 3. ✅ **5–10 Min Loom Walkthrough**: Directly mapped to the assessment's 4-part evaluation rubric.
 
 ---
 
-### Timing Breakdown (Target: 6–8 minutes total)
+### Evaluation Weight Breakdown & Timing Guide (Target: 7–8 Minutes)
 
-| Section | Target Duration | Focus |
-|---|---|---|
-| **1. Introduction & Problem** | 1:00 | Why truck routing needs weather awareness & load escalation |
-| **2. Architecture Overview** | 1:00 | Single Render service, React 18, Django 5, ORS, Open-Meteo |
-| **3. Pure Risk Engine Code Tour** | 1:30 | `backend/routing/risk.py`, Spotter tiers, load rules, ranking |
-| **4. Live Interactive UI Demo** | 2:30 | Mumbai-Delhi corridor, 3 routes, Leaflet pins, 0-48h scrubber |
-| **5. Testing & CI/CD** | 1:00 | 82 pytest tests, 10 Vitest tests, GitHub Actions green check |
-| **6. Assumptions & Wrap-up** | 0:30 | Key assumptions & submission wrap-up |
+| Weight | Assessment Area | Duration | Core Focus |
+|---|---|---|---|
+| **40%** | **Routes, Weather, Risk & Recommendation Logic** | 3:00 | Spotter hazard tiers, pure risk engine, cargo load escalation, 4-tier tiebreak ranking, ETA/geometry math |
+| **40%** | **UI, Map & Heatmap Smoothness & Performance** | 2:30 | Esri clean tiles, 3 corridor alternatives, hazard pins, instantaneous 0–48h client-side heatmap scrubber |
+| **15%** | **Code Quality & Correctness** | 1:30 | Pure functions in `risk.py`, no framework coupling, 82 backend pytest tests, 10 Vitest tests, Ruff linting |
+| **5%** | **Documentation & Deliverables** | 0:30 | Live app links, GitHub repo, transparent assumptions & wrap-up |
 
 ---
 
 ## 🎙️ Spoken Script & Screen Actions
 
-### 1. Introduction (0:00 – 1:00)
-**Screen to show**: Browser showing the home page of the application (`http://localhost:5173` or your live Render URL).
+### 0. Introduction & Live Application (0:00 – 0:45)
+**Screen to show**: Live hosted web application (`https://weather-aware-truck-routing-ridhesh.vercel.app/`).
 
-> *"Hello everyone! Today I’m walking through our **Weather-Aware Commercial Truck Routing application**.*
+> *"Hello! Today I'm demonstrating our **Weather-Aware Commercial Truck Routing application** built for commercial logistics dispatchers.
 >
-> *In commercial logistics, drivers and dispatchers traditionally pick routes based strictly on mileage or the shortest travel time. However, commercial freight—especially heavy 30,000 to 45,000-pound rigs—faces extreme rollover and jackknife hazards when exposed to high crosswinds, torrential monsoon rains, or mountain freezing snow.*
+> In commercial freight, picking routes strictly on shortest distance or shortest transit time leads to disasters. Heavy 30,000 to 45,000-pound semi-trucks face severe rollover and jackknife risks when hit with high crosswinds, freezing rain, or heavy snow.
 >
-> *Our goal with this application is simple: **recommend the route that is safest first and fastest second**."*
-
----
-
-### 2. Architecture & Tech Stack (1:00 – 2:00)
-**Screen to show**: Open `README.md` or show the architecture diagram.
-
-> *"Let's look at how the system is designed:*
->
-> *On the frontend, we use **React 18 with Vite and TypeScript**, styled in an **Industrial Safety Yellow** high-visibility theme with **React-Leaflet** for interactive mapping and **leaflet.heat** for corridor weather heatmaps.*
->
-> *On the backend, we use **Django 5 and Django REST Framework**, served in production with **WhiteNoise** as a single unified service on Render. This eliminates cross-origin latency and CORS complications.*
->
-> *For routing, we connect to **OpenRouteService** with an intelligent South Asian city registry fallback. For weather, we query **Open-Meteo's** hourly forecast with a 60-minute in-memory cache."*
+> Our application evaluates highway alternatives, samples road corridors at regular intervals, projects exact arrival ETAs, queries weather forecasts, and applies pure-function cargo risk rules to **recommend the safest route first and fastest second**."*
 
 ---
 
-### 3. Pure Risk Engine Code Tour (2:00 – 3:30)
-**Screen to show**: Open `backend/routing/risk.py` in VS Code / IDE.
+### Part 1: Routes, Weather, Risk & Recommendation Logic (40% Evaluation) (0:45 – 3:45)
+**Screen to show**: Split screen between VS Code (`backend/routing/risk.py` & `backend/routing/geo.py`) and the app.
 
-> *"A critical requirement of the assessment was keeping the risk classification engine as pure functions with zero framework or HTTP dependencies.*
+> *"Let's dive into the core logic, which accounts for 40% of the evaluation:
 >
-> *(Point to `classify_wind`, `classify_rain`, `classify_snow`): Here we classify each weather variable into five Spotter tiers: Low, Moderate, High, Severe, and No Travel based on exact boundary definitions.*
+> #### 1. Pure Risk Classification Engine (`backend/routing/risk.py`)
+> The risk engine is built completely from **pure functions** with zero external or HTTP dependencies:
+> - **Wind, Rain, and Snow Tiers**: We strictly classify weather into five Spotter levels: `LOW`, `MODERATE`, `HIGH`, `SEVERE`, and `NO_TRAVEL`.
+> - **Boundary Precision**:
+>   - Wind: 25 mph is Moderate, 35 mph is High, 55 mph is No Travel.
+>   - Rain: 0.10 in/hr is Moderate, 1.00 in/hr is Severe, >1.00 in/hr is No Travel.
+>   - Snow: 0.10 in/hr is Moderate, 0.50 in/hr is High, 1.50 in/hr is Severe, >1.50 in/hr is No Travel.
+> - **Load Rules (Escalate Only)**: The rules can **only escalate risk, never lower it**:
+>   - Any wind ≥ 55 mph: Immediate `NO_TRAVEL` for *any* cargo weight.
+>   - Winds 45–54 mph: Escalates to `NO_TRAVEL` if the gross cargo weight exceeds **30,000 lbs**.
+>   - Winds 35–44 mph: Escalates to `SEVERE` if the cargo weight exceeds **40,000 lbs**.
 >
-> *(Point to `apply_load_rules`): Next is the load escalation logic. The rules state that load rules can only escalate risk, never lower it:
-> - Any wind ≥ 55 mph is an immediate **No Travel** for any load.
-> - High winds between 45 and 54 mph escalate to **No Travel** if the cargo load exceeds 30,000 pounds.
-> - Winds between 35 and 44 mph escalate to **Severe** if the load exceeds 40,000 pounds.
+> #### 2. Four-Tier Recommendation Hierarchy
+> When evaluating candidate routes, our ranking engine strictly enforces the specification's 4-tier priority:
+> 1. **Fewest Severe miles**
+> 2. **Fewest High miles**
+> 3. **Lowest average risk score**
+> 4. **Shortest travel time**
+> Any route with even a single `NO_TRAVEL` checkpoint is disqualified and marked as **BLOCKED** with the exact mile marker and blocking hazard reported to the dispatcher.
 >
-> *(Point to `rank_routes`): Finally, our route ranking prioritizes safety:
-> 1. Fewest Severe miles
-> 2. Fewest High miles
-> 3. Lowest average risk
-> 4. Shortest travel duration
-> Any route with a single No Travel checkpoint is disqualified."*
-
----
-
-### 4. Live Interactive UI Demo (3:30 – 6:00)
-**Screen to show**: Live Browser (`http://localhost:5173` or Render hosted URL).
-
-> *"Now let's see the application in action.*
->
-> *Notice that upon loading, the application immediately evaluates our default corridor: the **Mumbai to New Delhi Western Corridor (NH48)**.*
->
-> *(Point to the map): On the Leaflet map, we see three distinct highway alternatives:
-> - Route 1 via NH48 is highlighted in bold Industrial Safety Yellow with an outer contrast casing because it was determined to be the safest recommended haul.
-> - Routes 2 and 3 are displayed in contrasting cyan and purple.
-> - Along the route, checkpoints are sampled every 25 miles and rendered as circular pins colored by their risk tier.
->
-> *(Click a checkpoint pin on the map): Clicking on any pin displays a detailed popup showing the projected arrival ETA, wind speed, rain, snow rate, and exact risk level.*
->
-> *(Scroll to Route Comparison Cards): Below the map, each route card displays its total mileage, duration, severe miles, high miles, average risk score, and blocked status.*
->
-> *(Scroll to the 0–48 Hour Scrubber): Here is the 0–48 hour timeline scrubber. Notice that as I click Play or slide the scrubber, the corridor heatmap and risk breakdown counts update **instantaneously client-side with zero network calls**. This allows a dispatcher to inspect how weather fronts will evolve over the next two days."*
+> #### 3. Geometry & ETA Correctness (`backend/routing/geo.py`)
+> - **No ETA Drift**: We calculate the cumulative polyline distance using haversine geometry and pass that exact geometry length into `calculate_eta`. This guarantees the destination arrival time matches departure plus duration exactly without clamping.
+> - **No Missing Remainder Miles**: The final destination is always included whenever remainder distance > 0, ensuring that the sum of checkpoint segment miles matches the corridor length precisely.
+> - **Safe Weather Fallbacks**: Missing or unqueried checkpoints are labeled `UNKNOWN` and excluded from low-risk calculations so bad data is never masked as safe."*
 
 ---
 
-### 5. Automated Testing & CI/CD (6:00 – 7:00)
-**Screen to show**: Terminal running tests or GitHub Actions page.
+### Part 2: UI, Map & Heatmap Smoothness & Performance (40% Evaluation) (3:45 – 6:15)
+**Screen to show**: Live Browser on Vercel (`https://weather-aware-truck-routing-ridhesh.vercel.app/`).
 
-> *"Let’s look at quality assurance and automated testing:*
+> *"Now let's examine the user experience, mapping, and responsiveness (40% of the evaluation):
 >
-> *(Show terminal): In the backend, we run `python -m pytest`:
-> - All **82 backend tests** pass in under 2 seconds, verifying every boundary threshold, cargo escalation rule, route ranking scenario, and API endpoint.
-> - Our code style is enforced with `ruff check .` with zero errors.
+> #### 1. High-Performance Mapping & Tile Reliability
+> - Notice the crisp base map: we use **Esri World Street Map tiles**, which provide fast, unmetered, watermark-free vector rendering across all devices, completely eliminating OpenStreetMap 403 blocks and Carto watermark overlays.
+> - The map displays three distinct route alternatives:
+>   - **Recommended Corridor (Route 1)**: Highlighted in bold **Industrial Safety Yellow** (#f59e0b) with high-contrast outer casing.
+>   - **Alternative Corridors (Routes 2 & 3)**: Rendered in contrasting cyan and violet for instant distinction.
 >
-> *(Show frontend test run): In the frontend, Vitest runs:
-> - **10 unit tests** pass across 3 test suites verifying the form inputs, quick presets, timeline scrubber, and checkpoint table.
+> #### 2. Route Checkpoint Markers & Popups
+> - Along the selected route, checkpoints are sampled every 25 miles (configurable to 10 or 50 miles).
+> - Each checkpoint is rendered as a clean circular pin colored by its risk tier (Green for Low, Yellow for Moderate, Orange for High, Red for Severe, Dark Slate for No Travel).
+> - Clicking on any checkpoint pin shows an interactive popup displaying the **projected arrival ETA**, **exact mile marker**, **wind speed**, **precipitation rate**, **snowfall**, and the **active load rule** applied.
 >
-> *All tests, linters, and production builds are integrated into our GitHub Actions workflow, which automatically runs on every push and deploys to Render via a secure deploy hook."*
+> #### 3. 0–48 Hour Timeline Scrubber & Corridor Heatmap
+> *(Click Play or drag the slider)*:
+> - Notice how smoothly the timeline scrubs from hour 0 to hour 48:
+> - As I drag the scrubber, the corridor heatmap and risk metrics update **instantaneously at 60 fps**.
+> - **Performance Architecture**: All 48 hours of weather forecasts are returned in a compact matrix in the initial plan response. Zero network requests occur while scrubbing. Everything computes client-side in memory for butter-smooth interaction."*
 
 ---
 
-### 6. Key Assumptions & Conclusion (7:00 – 7:30)
-**Screen to show**: Return to app home screen.
+### Part 3: Code Quality & Automated Testing (15% Evaluation) (6:15 – 7:45)
+**Screen to show**: Terminal in VS Code running `pytest` and frontend tests.
 
-> *"To summarize our key design assumptions:
-> 1. Miles attributed to each checkpoint equal the sampling interval (covering the segment behind it).
-> 2. Average travel speeds are distributed uniformly across route distance.
-> 3. Checkpoint weather uses the forecast hour closest to its projected arrival ETA.
-> 4. The 0–48h timeline scrubber visualizes corridor conditions at future hours from departure, while the route recommendation evaluates ETA-based risk.
+> *"Code quality accounts for 15% of the evaluation:
 >
-> Thank you for watching!"*
+> #### 1. Automated Backend Test Suite
+> Let's run our backend test suite:
+> ```bash
+> python -m pytest -q
+> ```
+> *(Point to terminal output)*:
+> - **82 unit and integration tests** pass in under 2 seconds.
+> - Tests cover exact boundary thresholds for wind, rain, and snow, cargo weight escalation, strict 4-tier ranking, polyline haversine distance consistency, and API error handling.
+> - Linter compliance: `python -m ruff check .` passes with zero violations.
+>
+> #### 2. Frontend Test Suite & TypeScript Rigor
+> On the frontend:
+> ```bash
+> npm test
+> ```
+> - **10 Vitest tests** pass across 3 test suites, validating form state management, preset loading, timeline scrubber interactions, and accessibility.
+> - Strict TypeScript compiler checks ensure zero type errors."*
 
+---
+
+### Part 4: Documentation, Deliverables & Conclusion (5% Evaluation) (7:45 – 8:30)
+**Screen to show**: GitHub repository page (`https://github.com/Ridhesh927/Weather-Aware-Truck-Routing`) and `README.md`.
+
+> *"To close with the deliverables and documentation:
+> 1. **Hosted Application**: Fully deployed with frontend on Vercel and backend on Render with CORS and production static asset serving.
+> 2. **GitHub Repository**: Includes comprehensive documentation in `README.md`, architectural sequence diagrams, API schema documentation, and setup steps for both local and Docker environments.
+> 3. **Transparent Assumptions**:
+>    - Checkpoint weather uses the forecast hour closest to its projected arrival ETA.
+>    - Load rules apply to gross cargo weight and strictly escalate risk.
+>    - The timeline scrubber visualizes corridor weather fronts across 48 hours, while recommendation decisions evaluate ETA-specific weather.
+>
+> By prioritizing correctness, mathematical consistency, and silky-smooth client-side responsiveness, this application delivers a reliable dispatch tool that truly protects drivers and cargo.
+>
+> Thank you!"*
+
+---
+
+### Quick Recording Checklist Before You Record
+- [ ] Browser window sized to 1080p (1920x1080) for sharp readability.
+- [ ] Live URL loaded: `https://weather-aware-truck-routing-ridhesh.vercel.app/`
+- [ ] Have VS Code ready with `backend/routing/risk.py` and a terminal open.
+- [ ] Test the play/pause button on the 0–48h timeline scrubber once before recording to verify smooth 60fps animation.
+- [ ] Keep Loom duration between 6 to 8 minutes.

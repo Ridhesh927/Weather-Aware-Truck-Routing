@@ -3,14 +3,19 @@ OpenRouteService (ORS) API client for geocoding and alternative truck routes.
 Supports driving-hgv with graceful fallback to driving-car and zero-config demo routing.
 """
 
+import logging
 import math
 import os
+import re
 from typing import Any
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 
 from routing.geo import haversine_distance
+
+logger = logging.getLogger(__name__)
 
 # Major South Asian & Indian commercial freight hubs fallback registry
 CITY_REGISTRY: dict[str, tuple[float, float, str]] = {
@@ -90,11 +95,17 @@ class ORSClient:
         if not clean_text:
             raise ORSClientError("Geocoding query text cannot be empty.")
 
-        # Check local regional hub registry
+        # Check local regional hub registry with word boundaries
         lower_query = clean_text.lower()
-        for city_key, (lat, lon, label) in CITY_REGISTRY.items():
-            if city_key in lower_query:
-                return (lat, lon, label)
+        for city_key in sorted(CITY_REGISTRY, key=len, reverse=True):
+            if re.search(rf"\b{re.escape(city_key)}\b", lower_query):
+                return CITY_REGISTRY[city_key]
+
+        # Check cache for geocode results
+        cache_key = f"nom_geo_{re.sub(r'[^a-zA-Z0-9_]', '_', lower_query)[:60]}"
+        cached_coords = cache.get(cache_key)
+        if cached_coords is not None:
+            return cached_coords
 
         # If user provided a real ORS API key, try ORS geocode
         if self.has_valid_api_key:
@@ -136,11 +147,13 @@ class ORSClient:
                 nom_data = nom_resp.json()
                 if nom_data and isinstance(nom_data, list):
                     item = nom_data[0]
-                    return (
+                    res = (
                         float(item["lat"]),
                         float(item["lon"]),
                         str(item.get("display_name", clean_text)),
                     )
+                    cache.set(cache_key, res, timeout=86400)
+                    return res
         except Exception as e:
             raise ORSClientError(f"Geocoding service unavailable for '{clean_text}': {e}") from e
 
@@ -170,10 +183,12 @@ class ORSClient:
                     )
                     if routes:
                         return routes
-                except Exception:
+                except Exception as e:
+                    logger.warning("ORS directions request failed for %s: %s", profile, e)
                     continue
 
         # Zero-key / Offline fallback: Synthesize 3 realistic alternative route corridors
+        logger.info("Using simulated route fallback for (%s -> %s)", origin_coords, dest_coords)
         return self._generate_simulated_alternatives(
             origin_coords=origin_coords,
             dest_coords=dest_coords,
@@ -226,6 +241,7 @@ class ORSClient:
                     "distance_meters": distance_m,
                     "duration_seconds": duration_s,
                     "name": f"Route {idx + 1}",
+                    "source": "ors",
                 }
             )
 
@@ -290,6 +306,7 @@ class ORSClient:
                     "distance_meters": round(route_dist_miles * 1609.344, 1),
                     "duration_seconds": round(route_duration_seconds, 1),
                     "name": route_name,
+                    "source": "simulated",
                 }
             )
 

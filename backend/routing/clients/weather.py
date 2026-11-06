@@ -176,9 +176,10 @@ class WeatherClient:
         if not hourly_series:
             return {
                 "time": eta.isoformat(),
-                "wind_speed_mph": 0.0,
-                "rain_in_hr": 0.0,
-                "snow_in_hr": 0.0,
+                "weather_available": False,
+                "wind_speed_mph": None,
+                "rain_in_hr": None,
+                "snow_in_hr": None,
             }
 
         eta_ts = int(eta.timestamp())
@@ -186,7 +187,9 @@ class WeatherClient:
             hourly_series,
             key=lambda x: abs(x.get("timestamp", eta_ts) - eta_ts),
         )
-        return closest
+        res = dict(closest)
+        res["weather_available"] = True
+        return res
 
     @staticmethod
     def compute_hourly_risk_series(

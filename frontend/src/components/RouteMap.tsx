@@ -211,10 +211,17 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   selectedCheckpointId,
   onSelectCheckpoint,
 }) => {
-  // Convert [lon, lat] GeoJSON coordinates to Leaflet [lat, lon]
+  // Convert coordinates safely to Leaflet [lat, lon]
   const polylines = useMemo(() => {
     return routes.map((r) => {
-      const latLngs = r.geometry.map(([lon, lat]) => [lat, lon] as [number, number])
+      const latLngs = r.geometry.map(([c1, c2]) => {
+        // GeoJSON standard is [lon, lat]; Leaflet needs [lat, lon].
+        // For South Asia/India, lon is ~68-98 and lat is ~8-37.
+        if (Math.abs(c1) > Math.abs(c2)) {
+          return [c2, c1] as [number, number]
+        }
+        return [c1, c2] as [number, number]
+      })
       return {
         id: r.id,
         name: r.name,
@@ -313,10 +320,9 @@ export const RouteMap: React.FC<RouteMapProps> = ({
           style={{ height: '480px', width: '100%', borderRadius: '10px' }}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-            maxZoom={19}
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, DeLorme, NAVTEQ, USGS'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={18}
           />
 
           <BoundsFitter bounds={bounds} />

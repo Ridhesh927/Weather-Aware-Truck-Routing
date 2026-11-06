@@ -196,8 +196,10 @@ class TestRouteMetrics:
     def test_empty_checkpoints(self):
         metrics = route_metrics([], interval_miles=25.0, total_minutes=90.0)
         assert metrics == {
+            "total_miles": 0.0,
             "severe_miles": 0.0,
             "high_miles": 0.0,
+            "unknown_miles": 0.0,
             "average_risk": 1.0,
             "blocked": False,
             "total_minutes": 90.0,

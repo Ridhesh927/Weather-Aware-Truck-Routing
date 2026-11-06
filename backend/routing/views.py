@@ -9,8 +9,9 @@ from rest_framework.response import Response
 
 from routing.clients.ors import ORSClient, ORSClientError
 from routing.clients.weather import WeatherClient, WeatherClientError
-from routing.geo import calculate_eta, sample_checkpoints
+from routing.geo import calculate_eta, calculate_polyline_distance, sample_checkpoints
 from routing.risk import (
+    Level,
     apply_load_rules,
     checkpoint_risk,
     get_recommended_route,
@@ -68,8 +69,10 @@ def plan_trip(request):
     # Validate interval_miles
     raw_interval = data.get("interval_miles", 25)
     try:
-        interval_miles = float(raw_interval)
-        if interval_miles not in [10.0, 25.0, 50.0]:
+        parsed_int = int(round(float(raw_interval)))
+        if parsed_int in {10, 25, 50}:
+            interval_miles = float(parsed_int)
+        else:
             interval_miles = 25.0
     except (ValueError, TypeError):
         interval_miles = 25.0
@@ -154,6 +157,8 @@ def plan_trip(request):
         dur_seconds = raw_r.get("duration_seconds", 0.0)
         route_miles = round(dist_meters * 0.000621371, 2)
         route_minutes = round(dur_seconds / 60.0, 2)
+        geom_miles = calculate_polyline_distance(lat_lon_coords)
+        eta_total_miles = geom_miles if geom_miles > 0 else (route_miles if route_miles > 0 else 1.0)
 
         checkpoints = sample_checkpoints(lat_lon_coords, interval_miles=interval_miles)
 
@@ -161,7 +166,7 @@ def plan_trip(request):
             eta = calculate_eta(
                 departure_time=departure_time,
                 mile_marker=cp["mile_marker"],
-                total_miles=route_miles,
+                total_miles=eta_total_miles,
                 total_duration_seconds=dur_seconds,
             )
             cp["eta"] = eta.isoformat()
@@ -173,8 +178,9 @@ def plan_trip(request):
                 "id": r_idx,
                 "name": raw_r.get("name", f"Route {r_idx + 1}"),
                 "profile": raw_r.get("profile", "driving-hgv"),
+                "source": raw_r.get("source", "ors"),
                 "geometry": geom_coords,
-                "total_miles": route_miles,
+                "total_miles": route_miles or round(geom_miles, 2),
                 "total_minutes": route_minutes,
                 "checkpoints": checkpoints,
             }
@@ -183,40 +189,57 @@ def plan_trip(request):
     # 4. Batch query weather for all unique checkpoint points
     weather_client = WeatherClient()
     unique_points = list({(round(p[0], 4), round(p[1], 4)) for p in all_points})
+    warnings: list[str] = []
 
     try:
         forecasts_map = weather_client.get_forecasts_for_points(unique_points)
     except WeatherClientError as e:
-        logger.error(f"Weather forecast query failed: {e}")
-        # Continue with empty forecasts rather than hard-failing
+        logger.error("Weather forecast query failed: %s", e)
         forecasts_map = {}
+        warnings.append("Weather service query failed; weather is temporarily unavailable.")
     except Exception:
         logger.exception("Unexpected error during weather fetching")
         forecasts_map = {}
+        warnings.append("Unexpected error retrieving weather forecasts.")
 
     # Helper to lookup cached/fetched point in map by approximate match
     def get_series(lat: float, lon: float) -> list[dict[str, Any]]:
         key = (round(lat, 4), round(lon, 4))
         return forecasts_map.get(key, [])
 
+    missing_points = sum(1 for pt in unique_points if not get_series(pt[0], pt[1]))
+    if missing_points > 0 and not warnings:
+        warnings.append(
+            f"Weather data unavailable for {missing_points} of {len(unique_points)} checkpoint locations."
+        )
+
     # 5. Classify weather and evaluate load risk per checkpoint
     for route in processed_routes:
         cps = route["checkpoints"]
         for cp in cps:
             series = get_series(cp["lat"], cp["lon"])
-            wx = weather_client.get_weather_at_eta(series, cp.pop("_eta_dt"))
+            eta_val = cp.pop("_eta_dt", None) or departure_time
+            wx = weather_client.get_weather_at_eta(series, eta_val)
 
-            wind = wx.get("wind_speed_mph", 0.0)
-            rain = wx.get("rain_in_hr", 0.0)
-            snow = wx.get("snow_in_hr", 0.0)
+            if not wx.get("weather_available", True):
+                cp["wind_mph"] = 0.0
+                cp["rain_in_hr"] = 0.0
+                cp["snow_in_hr"] = 0.0
+                cp["level"] = Level.UNKNOWN.value
+                cp["weather_available"] = False
+            else:
+                wind = float(wx.get("wind_speed_mph") or 0.0)
+                rain = float(wx.get("rain_in_hr") or 0.0)
+                snow = float(wx.get("snow_in_hr") or 0.0)
 
-            base_risk = checkpoint_risk(wind, rain, snow)
-            final_risk = apply_load_rules(base_risk, wind, load_lb)
+                base_risk = checkpoint_risk(wind, rain, snow)
+                final_risk = apply_load_rules(base_risk, wind, load_lb)
 
-            cp["wind_mph"] = wind
-            cp["rain_in_hr"] = rain
-            cp["snow_in_hr"] = snow
-            cp["level"] = final_risk.value
+                cp["wind_mph"] = wind
+                cp["rain_in_hr"] = rain
+                cp["snow_in_hr"] = snow
+                cp["level"] = final_risk.value
+                cp["weather_available"] = True
 
         # Calculate metrics for this route
         summary = route_metrics(
@@ -224,7 +247,6 @@ def plan_trip(request):
             interval_miles=interval_miles,
             total_minutes=route["total_minutes"],
         )
-        summary["total_miles"] = route["total_miles"]
         route["summary"] = summary
 
     # 6. Rank routes & select recommendation
@@ -248,6 +270,11 @@ def plan_trip(request):
             }
         )
 
+    # Check overall routing source
+    overall_source = "simulated" if any(r.get("source") == "simulated" for r in processed_routes) else "ors"
+    if overall_source == "simulated":
+        warnings.append("Demo routes: calculated via regional highway fallback because routing API is unconfigured/offline.")
+
     # Format response
     response_payload = {
         "origin": {
@@ -263,6 +290,8 @@ def plan_trip(request):
         "departure_at": departure_time.isoformat(),
         "load_lb": load_lb,
         "interval_miles": interval_miles,
+        "source": overall_source,
+        "warnings": warnings,
         "routes": processed_routes,
         "recommended_index": best_index,
         "recommendation_reason": reason,

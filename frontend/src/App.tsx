@@ -73,6 +73,8 @@ interface PlanResponse {
   departure_at: string
   load_lb: number
   interval_miles: number
+  source?: string
+  warnings?: string[]
   routes: RouteOption[]
   recommended_index: number | null
   recommendation_reason: string
@@ -447,6 +449,16 @@ function App() {
               <p className="recommendation-banner" style={{ marginTop: '0.5rem' }}>
                 <strong>Recommendation:</strong> {planResult.recommendation_reason}
               </p>
+            )}
+            {planResult.warnings && planResult.warnings.length > 0 && (
+              <div className="demo-routes-banner" style={{ marginTop: '0.75rem' }}>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <div>
+                  {planResult.warnings.map((w, wIdx) => (
+                    <div key={wIdx}>{w}</div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

@@ -12,8 +12,10 @@ class Level(StrEnum):
     """
     Weather risk levels ordered by increasing severity.
     Numeric values: LOW=1, MODERATE=2, HIGH=3, SEVERE=4, NO_TRAVEL=5.
+    UNKNOWN represents unclassified or missing weather data (severity 0).
     """
 
+    UNKNOWN = "UNKNOWN"
     LOW = "LOW"
     MODERATE = "MODERATE"
     HIGH = "HIGH"
@@ -23,6 +25,7 @@ class Level(StrEnum):
     @property
     def severity(self) -> int:
         order = {
+            Level.UNKNOWN: 0,
             Level.LOW: 1,
             Level.MODERATE: 2,
             Level.HIGH: 3,
@@ -185,16 +188,20 @@ def route_metrics(
 ) -> dict[str, Any]:
     """
     Compute summary metrics for a route's checkpoints:
+    - total_miles: total route distance evaluated across checkpoints
     - severe_miles: miles spent in SEVERE risk
     - high_miles: miles spent in HIGH risk
-    - average_risk: miles-weighted average risk level (LOW=1 to NO_TRAVEL=5)
+    - unknown_miles: miles where weather data was unavailable
+    - average_risk: miles-weighted average risk level (LOW=1 to NO_TRAVEL=5, excluding UNKNOWN)
     - blocked: True if any checkpoint is NO_TRAVEL
     - total_minutes: total travel duration in minutes
     """
     if not checkpoints:
         return {
+            "total_miles": 0.0,
             "severe_miles": 0.0,
             "high_miles": 0.0,
+            "unknown_miles": 0.0,
             "average_risk": 1.0,
             "blocked": False,
             "total_minutes": round(float(total_minutes), 2),
@@ -202,7 +209,9 @@ def route_metrics(
 
     severe_miles = 0.0
     high_miles = 0.0
+    unknown_miles = 0.0
     total_miles = 0.0
+    known_miles = 0.0
     weighted_risk_sum = 0.0
     blocked = False
 
@@ -217,21 +226,27 @@ def route_metrics(
 
         level = to_level(raw_level)
 
-        if level == Level.NO_TRAVEL:
+        if level == Level.UNKNOWN:
+            unknown_miles += miles
+        elif level == Level.NO_TRAVEL:
             blocked = True
         elif level == Level.SEVERE:
             severe_miles += miles
         elif level == Level.HIGH:
             high_miles += miles
 
-        weighted_risk_sum += level.severity * miles
+        if level != Level.UNKNOWN:
+            weighted_risk_sum += level.severity * miles
+            known_miles += miles
         total_miles += miles
 
-    avg_risk = weighted_risk_sum / total_miles if total_miles > 0 else 1.0
+    avg_risk = weighted_risk_sum / known_miles if known_miles > 0 else 1.0
 
     return {
+        "total_miles": round(total_miles, 2),
         "severe_miles": round(severe_miles, 2),
         "high_miles": round(high_miles, 2),
+        "unknown_miles": round(unknown_miles, 2),
         "average_risk": round(avg_risk, 2),
         "blocked": blocked,
         "total_minutes": round(float(total_minutes), 2),

@@ -101,7 +101,7 @@ def sample_checkpoints(
     traversed_dist = 0.0  # distance up to start of current_segment_idx
     cp_id = 0
 
-    while target_mile < total_length:
+    while target_mile < total_length - 0.1:
         # Advance through segments until target_mile is within current_segment_idx
         while (
             current_segment_idx < len(segment_lengths)
@@ -141,7 +141,7 @@ def sample_checkpoints(
     # Add final checkpoint at the destination if there's remaining distance
     last_marker = checkpoints[-1]["mile_marker"] if checkpoints else 0.0
     remainder = total_length - last_marker
-    if remainder > 0.5:  # more than half a mile remainder
+    if remainder > 0.0:  # append destination whenever remainder exists
         dest_lat, dest_lon = coords[-1]
         checkpoints.append(
             {
