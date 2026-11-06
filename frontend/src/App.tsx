@@ -123,6 +123,14 @@ function formatMinutes(minutes: number): string {
   return `${hrs}h ${mins}m`
 }
 
+const API_BASE_URL =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.origin.includes('onrender.com'))
+    ? (import.meta.env.VITE_API_BASE_URL || '')
+    : (import.meta.env.VITE_API_BASE_URL || 'https://weather-aware-truck-routing-2r1v.onrender.com')
+
 function App() {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
   const [healthData, setHealthData] = useState<HealthResponse | null>(null)
@@ -181,7 +189,7 @@ function App() {
       setIsPlanning(true)
 
       try {
-        const response = await fetch('/api/trips/plan/', {
+        const response = await fetch(`${API_BASE_URL}/api/trips/plan/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -218,7 +226,7 @@ function App() {
   )
 
   useEffect(() => {
-    fetch('/api/health/')
+    fetch(`${API_BASE_URL}/api/health/`)
       .then((res) => {
         if (!res.ok) throw new Error('Health check failed')
         return res.json()

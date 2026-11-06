@@ -122,13 +122,12 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS configuration
+# CORS configuration - Allow all origins so standalone frontend (e.g. Vercel) can call Render backend
+CORS_ALLOW_ALL_ORIGINS = True
 cors_origins_raw = os.getenv(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
 
 # Cache configuration (locmem for development and assessment)
 CACHES = {
