@@ -8,6 +8,9 @@ A full-stack commercial trucking safety and dispatch platform. It evaluates mult
 ![Maps](https://img.shields.io/badge/Maps-Leaflet%20%7C%20leaflet.heat-199900)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088ff)
 ![Status](https://img.shields.io/badge/Tests-82%20Backend%20%2F%2010%20Frontend%20Passing-brightgreen)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render%20Hosted-22c55e?style=for-the-badge&logo=render)](https://weather-aware-truck-routing-2r1v.onrender.com/)
+
+🔗 **Live Production URL**: [https://weather-aware-truck-routing-2r1v.onrender.com/](https://weather-aware-truck-routing-2r1v.onrender.com/)
 
 ---
 
@@ -97,7 +100,10 @@ The application features dedicated presets for major Indian commercial logistics
 
 ## 🚀 Live Deployment (Render Single Service)
 
-The production app runs on **Render** as a single unified web service where Django serves both the DRF API and the compiled React frontend via **WhiteNoise**.
+The production app is live on **Render** as a single unified web service where Django serves both the DRF API and the compiled React frontend via **WhiteNoise**.
+
+- 🌐 **Live Web Application**: [https://weather-aware-truck-routing-2r1v.onrender.com/](https://weather-aware-truck-routing-2r1v.onrender.com/)
+- 🩺 **Live Health Check**: [https://weather-aware-truck-routing-2r1v.onrender.com/api/health/](https://weather-aware-truck-routing-2r1v.onrender.com/api/health/)
 
 ### Render Setup Steps
 1. Fork or push this repository to GitHub.
